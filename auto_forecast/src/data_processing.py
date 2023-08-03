@@ -9,12 +9,15 @@ def aggregate_by_time(data, date_col, resample_freq, aggregate):
     resampled = data.set_index(date_col).resample(resample_freq).agg(aggregate)
     return resampled.reset_index()
 
-def difference_data(data, value_col):
+def difference_data(data, date_col, value_col, diff_value_col_name=None):
     if value_col not in data.columns:
         raise ValueError("value_col must exist within the data columns.")
+    if not diff_value_col_name:
+        diff_value_col_name = f'{value_col}_differenced'
 
-    new_col_name = f'{value_col}_differenced'
-    data[new_col_name] = data[value_col].diff()
+    data = data.sort_values(by=date_col).reset_index(drop=True)
+
+    data[diff_value_col_name] = data[value_col].diff()
     return data
     
 def create_lag_data(data, date_col, value_col, lags):

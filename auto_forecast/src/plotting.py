@@ -101,6 +101,20 @@ def plt_acf_pcf(data, date_col, value_col, lags=None, color='mediumblue', figsiz
     sns.despine()
     plt.tight_layout()
 
+def plot_lag_cols(data, date_col, value_col, lag_col_root, num_lags=None, figsize=(8, 3)):
+    
+    all_lag_cols = [col for col in data.columns if lag_col_root in col]
+    if not num_lags:
+        num_lags=len(all_lag_cols)
+
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.plot(data[date_col], data[value_col], label='original')
+    
+    for lag_col in all_lag_cols[:num_lags]:
+        ax.plot(data[date_col], data[lag_col], label=lag_col)
+    
+    plt.legend()
+
 def plot_results(results, original_df, model_name, figsize=p.FIG_SIZE, color1=p.PLOT_COLOR_1, color2=p.PLOT_COLOR_2):
     """Plots predictions over original data to visualize results. Saves each
     plot as a png.

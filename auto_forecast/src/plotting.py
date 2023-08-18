@@ -101,7 +101,7 @@ def plt_acf_pcf(data, date_col, value_col, lags=None, color='mediumblue', figsiz
     sns.despine()
     plt.tight_layout()
 
-def plot_lag_cols(data, date_col, value_col, lag_col_root, num_lags=None, figsize=(8, 3)):
+def plot_lag_cols(data, date_col, value_col, lag_col_root, num_lags=None, figsize=p.FIG_SIZE):
     
     all_lag_cols = [col for col in data.columns if lag_col_root in col]
     if not num_lags:
@@ -114,6 +114,14 @@ def plot_lag_cols(data, date_col, value_col, lag_col_root, num_lags=None, figsiz
         ax.plot(data[date_col], data[lag_col], label=lag_col)
     
     plt.legend()
+
+def visualize_train_test(train, test, date_col, value_col, figsize=p.FIG_SIZE):
+    fig, ax = plt.subplots(figsize=(6, 3)) 
+
+    full_data = pd.concat((train, test))
+    sns.lineplot(x=train[date_col], y=train[value_col], ax=ax, label='train')
+    sns.lineplot(x=test[date_col], y=test[value_col], ax=ax, label='test')
+    sns.despine()
 
 def plot_results(results, original_df, model_name, figsize=p.FIG_SIZE, color1=p.PLOT_COLOR_1, color2=p.PLOT_COLOR_2):
     """Plots predictions over original data to visualize results. Saves each

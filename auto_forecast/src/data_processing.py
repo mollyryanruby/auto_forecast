@@ -39,25 +39,27 @@ def create_lag_data(data, date_col, value_col, lags):
     return data.dropna()
 
 def create_train_test(data, test_size):
-    return data.iloc[:-test_size], data.iloc[:-test_size:]
+    return data.iloc[:-test_size], data.iloc[-test_size:]
 
-def reshape_data(data):
-    return data.reshape(data.shape[0], data.shape[1])
+def get_x_y(self, data):
+        return data[self.x_cols], data[[self.target_col]]
 
-def min_max_built_in_scaler(train_set, test_set):
-    #apply Min Max Scaler
-    scaler = MinMaxScaler(feature_range=(-1, 1))
-    scaler = scaler.fit(train_set)
-    
-    # reshape training set
-    train_set = reshape_data(train_set)
-    train_set_scaled = scaler.transform(train_set)
-    
-    # reshape test set
-    test_set = reshape_data(test_set)
-    test_set_scaled = scaler.transform(test_set)
-    
-    return train_set_scaled, test_set_scaled, scaler
 
-def get_x_y(data, target_col):
-    return data.drop(target_col), data[[target_col]]
+class DataScaler:
+    def __ini__(self):
+        self.scaler = None
+
+    def fit(self, data):
+        scaler = MinMaxScaler(feature_range=(-1, 1))
+        self.scaler = scaler.fit(data)
+        return self.scaler
+
+    def transform(self, data):
+        if not isinstance(self.scaler, MinMaxScaler):
+            raise ValueError("Scaler object must be fit before transformed.")
+        
+        return self.scaler.transform(data)
+    
+    def fit_transform(self, data):
+        self.fit(data)
+        return self.transform(data)

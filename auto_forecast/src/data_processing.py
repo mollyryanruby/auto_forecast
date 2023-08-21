@@ -49,17 +49,35 @@ class DataScaler:
     def __ini__(self):
         self.scaler = None
 
+    def __separate_columns(self, data):
+        date_cols = [col for col in data.columns if data.dtypes[col]=='<M8[ns]']
+        data_to_store = data[date_cols]
+        data_to_scale = data[[col for col in data.columns if col not in date_cols]]
+        data_to_scale_values = data_to_scale.values
+        return data_to_store, data_to_scale_values
+
     def fit(self, data):
+        # separate anything that is a date columns
+        
+        _, data_to_scale_values = self.__separate_columns(data)
+
         scaler = MinMaxScaler(feature_range=(-1, 1))
-        self.scaler = scaler.fit(data)
+        self.scaler = scaler.fit(data_to_scale_values)
         return self.scaler
 
     def transform(self, data):
         if not isinstance(self.scaler, MinMaxScaler):
             raise ValueError("Scaler object must be fit before transformed.")
         
-        return self.scaler.transform(data)
+        data_to_store, data_to_scale_values = self.__separate_columns(data)
+        scaled_data = pd.DataFrame(self.scaler.transform(data_to_scale_values))
+        reconciled_data = pd.concat((data_to_store.reset_index(drop=True), scaled_data.reset_index(drop=True)), axis=1)
+        reconciled_data.columns = data.columns
+        return reconciled_data
     
     def fit_transform(self, data):
         self.fit(data)
         return self.transform(data)
+    
+    def inverse(self, values):
+        return self.scaler.inverse_transform(values)

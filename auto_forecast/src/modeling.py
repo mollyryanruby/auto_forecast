@@ -4,7 +4,8 @@ from sklearn.metrics import (mean_squared_error,
                              mean_absolute_error, 
                             r2_score)
 from sklearn.linear_model import LinearRegression
-from src.plotting import (plot_results)
+from sklearn.ensemble import RandomForestRegressor
+from xgboost.sklearn import XGBRegressor
 
 def isvalid_value(value, values_list):
     if value not in values_list:
@@ -18,7 +19,17 @@ class SalesForecasting:
             'LinearRegression': {
                 'model': LinearRegression(),
                 'type': 'regression'
-                }
+                },
+            'RandomForest': {
+                'model': RandomForestRegressor(n_estimators=100, max_depth=20),
+                'type': 'regression'
+            },
+            'XGBoost': {
+                'model': XGBRegressor(n_estimators=100, 
+                                        learning_rate=0.2, 
+                                        objective='reg:squarederror'),
+                'type': 'regression'
+            }
         }
 
         if not isinstance(model_list, list):
@@ -63,16 +74,16 @@ class SalesForecasting:
 
             # Undo scaling to compare predictions against original data
             if scaler is not None:
-                unscale_values = np.concatenate((x_values.values, predictions), axis=1)
+                unscale_values = np.concatenate((x_values.values, predictions.reshape(-1,1)), axis=1)
                 predictions = [row[-1] for row in self.__undo_scaling(unscale_values, scaler)]
 
             self.stored_models[model_name]['predictions'] = predictions
             
             if y_values is not None: 
                 unscale_values_true = np.concatenate((x_values.values, y_values), axis=1)
-                y_values = [row[-1] for row in self.__undo_scaling(unscale_values_true, scaler)]
-                self.stored_models[model_name]['true_values'] = y_values
-                _, _, _ = self.get_scores(predictions, y_values, model_name, print_scores)
+                y_values_unscaled = [row[-1] for row in self.__undo_scaling(unscale_values_true, scaler)]
+                self.stored_models[model_name]['true_values'] = y_values_unscaled
+                _, _, _ = self.get_scores(predictions, y_values_unscaled, model_name, print_scores)
         
         return self
     

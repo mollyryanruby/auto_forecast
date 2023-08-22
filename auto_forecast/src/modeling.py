@@ -21,12 +21,30 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 def isvalid_value(value, values_list):
+
     if value not in values_list:
         raise ValueError(f"{value} not in the list of available options: {values_list}")
     
 class SalesForecasting:
+    """
+    SalesForecasting class to train and predict sales using a variety of models. 
+    """
 
     def __init__(self, model_list):
+        """
+        Initialize the SalesForecasting class with a list of models to train and predict.
+
+        Args:
+            model_list (list): list of models to train and predict. Options include:
+                - LinearRegression
+                - RandomForest
+                - XGBoost
+                - LSTM
+                - ARIMA
+
+        Returns:
+            None
+        """
 
         self.model_list_options = {
             'LinearRegression': {
@@ -64,6 +82,16 @@ class SalesForecasting:
         self.stored_models = {model_name: {} for model_name in model_list}
     
     def fit(self, X_train, y_train):
+        """
+        Fit the models in model_dict to the training data.
+
+        Args:
+            X_train (pd.DataFrame): training data exogonous features for the model
+            y_train (pd.Series): training data target for the model
+        
+        Returns:
+            None
+        """
         
         model_list_options = self.model_list_options
         self.X_train = X_train
@@ -84,9 +112,28 @@ class SalesForecasting:
                 print('Model fit not found.')
     
     def __fit_regression_model(self, model):
+        """
+        Fit a regression model to the training data.
+
+        Args:
+            model (sklearn model): sklearn model to fit to the training data
+        
+        Returns:
+            model (sklearn model): fitted sklearn model
+        """
         return model.fit(self.X_train, self.y_train)
     
     def __fit_lstm_model(self, model):
+        """
+        Fit an LSTM model to the training data.
+
+        Args:
+            model (keras model): keras model to fit to the training data
+        
+        Returns:
+            model (keras model): fitted keras model
+        """
+
         X_train_lstm = self.X_train.values
         X_train_lstm = X_train_lstm.reshape(X_train_lstm.shape[0], 1, X_train_lstm.shape[1])
 
@@ -98,11 +145,32 @@ class SalesForecasting:
         return model.fit(X_train_lstm, self.y_train, epochs=200, batch_size=1, verbose=1, shuffle=False)
     
     def __fit_arima_model(self, model_name):
+        """
+        Fit an ARIMA model to the training data.
+
+        Args:
+            model_name (str): name of the model to fit to the training data
+        
+        Returns:
+            model (pmdarima model): fitted pmdarima model
+        """
         model = auto_arima(self.y_train, max_p=12, seasonal=True, m=12)
         self.model_list_options[model_name]['model'] = model
         return model
     
     def predict(self, x_values, y_values=None, scaler=None, print_scores=False):
+        """
+        Predict values using the models in model_dict.
+
+        Args:
+            x_values (pd.DataFrame): exogenous features to predict on
+            y_values (pd.Series): target values to compare predictions against
+            scaler (sklearn scaler): scaler used to scale the data
+            print_scores (bool): whether to print the scores for each model
+        
+        Returns:
+            self (SalesForecasting): self with updated predictions
+        """
 
         model_list_options = self.model_list_options
 
@@ -150,22 +218,72 @@ class SalesForecasting:
         return self
     
     def __predict_regression_model(self, model):
+        """
+        Predict values using a regression model.
+        
+        Args:
+            model (sklearn model): sklearn model to predict with
+
+        Returns:
+            predictions (np.array): array of predictions
+        """
         return model.predict(self.x_predictor_values)
     
     def __predict_lstm_model(self, model):
+        """
+        Predict values using an LSTM model.
+
+        Args:
+            model (keras model): keras model to predict with
+
+        Returns:
+            predictions (np.array): array of predictions
+        """
         X_test_lstm = self.x_predictor_values.values
         X_test_lstm = X_test_lstm.reshape(X_test_lstm.shape[0], 1, X_test_lstm.shape[1])
         return model.predict(X_test_lstm, batch_size=1)
     
     def __predict_arima_model(self, model):
+        """
+        Predict values using an ARIMA model.
+
+        Args:
+            model (pmdarima model): pmdarima model to predict with
+        Returns: 
+            predictions (np.array): array of predictions
+        """
         num_predictions = len(self.y_validation_values)
         return np.array(model.predict(n_periods=num_predictions))
 
 
     def __undo_scaling(self, values, scaler):
+        """
+        Undo scaling on a set of values.
+
+        Args:
+            values (np.array): array of values to unscale
+            scaler (sklearn scaler): scaler to use to unscale the values
+
+        Returns:
+            unscaled_values (np.array): array of unscaled values
+        """
         return scaler.inverse(values)
     
     def get_scores(self, y_pred, y_true, model_name=None, print_scores=False):
+        """
+        Get the scores for a model. Scores include RMSE, MAE, and R2.
+
+        Args:
+            y_pred (np.array): array of predicted values
+            y_true (np.array): array of true values
+            model_name (str): name of the model to get scores for
+            print_scores (bool): whether to print the scores for the model
+        
+        Returns:
+            rmse (float): root mean squared error
+            mae (float): mean absolute error
+            r2 (float): r squared
+        """
         rmse = np.sqrt(mean_squared_error(y_pred, y_true))
         mae = mean_absolute_error(y_pred, y_true)
         r2 = r2_score(y_pred, y_true)
@@ -185,6 +303,20 @@ class SalesForecasting:
         return rmse, mae, r2
     
     def plot_results(self, model_list=None, figsize=p.FIG_SIZE, xlabel="Date", ylabel="Sales", title="Sales Forecasting Predictions"):
+        """
+        Plot the results of the predictions against the actual values.
+        Generates a timeseries for predictions from each model in model_dict.
+
+        Args:
+            model_list (list): list of models to plot. If None, plots all models in model_dict
+            figsize (tuple): tuple of figure size
+            xlabel (str): label for x axis
+            ylabel (str): label for y axis
+            title (str): title for the plot
+        
+        Returns:
+            fig (matplotlib figure): figure with the plot
+        """
 
         # concatenate train and test to get all y values
         test_index = list(self.test_index)
@@ -229,6 +361,15 @@ class SalesForecasting:
         return fig
     
     def plot_errs(self, figsize=(13,3)):
+        """
+        Plot the errors for each model in model_dict. Errors include RMSE, MAE, and R2.
+
+        Args:
+            figsize (tuple): tuple of figure size
+        
+        Returns:
+            fig (matplotlib figure): figure with the plot
+        """
         output_df = pd.DataFrame(self.stored_models).T
         errs = ['rmse', 'mae', 'r2']
         

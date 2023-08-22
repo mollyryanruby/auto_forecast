@@ -11,6 +11,18 @@ import numpy as np
 import parameters as p
 
 def plot_periodic_values_hist(data, value_col, figsize=p.FIG_SIZE, color=p.COLORS[0]):
+    """
+    Plot a histogram of the values in the value_col of the data.
+
+    Args:
+        data (pd.DataFrame): data to plot
+        value_col (str): column name of the values to plot
+        figsize (tuple, optional): size of the figure. Defaults to p.FIG_SIZE.
+        color (str, optional): color of the histogram. Defaults to p.COLORS[0].
+
+    Returns:
+        fig, ax: figure and axis objects
+    """
     if value_col not in data.columns:
         raise ValueError("value_col must exist within the data columns.")
 
@@ -26,6 +38,19 @@ def plot_periodic_values_hist(data, value_col, figsize=p.FIG_SIZE, color=p.COLOR
     
 
 def plot_values_per_group(data, value_col, group_cols, figsize=p.FIG_SIZE, fill_color=p.COLORS[0]):
+    """
+    Plot the sum of the values in the value_col per group in the group_cols.
+
+    Args:
+        data (pd.DataFrame): data to plot
+        value_col (str): column name of the values to plot
+        group_cols (str or list): column name(s) of the groups to plot
+        figsize (tuple, optional): size of the figure. Defaults to p.FIG_SIZE.
+        fill_color (str, optional): color of the bars. Defaults to p.COLORS[0].
+    
+    Returns:
+        fig, ax: figure and axis objects
+    """
     if value_col not in data.columns:
         raise ValueError("value_col must exist within the data columns.")
     if not isinstance(group_cols, str) and not isinstance(group_cols, list):
@@ -51,6 +76,20 @@ def plot_values_per_group(data, value_col, group_cols, figsize=p.FIG_SIZE, fill_
     return fig, ax
 
 def plot_time_series(data, date_col, value_col, mean_freq=None, figsize=p.FIG_SIZE, color=p.COLORS[0]):
+    """
+    Plot the time series of the values in the value_col of the data.
+
+    Args:
+        data (pd.DataFrame): data to plot
+        date_col (str): column name of the dates
+        value_col (str): column name of the values to plot
+        mean_freq (str, optional): frequency to plot the mean. Defaults to None.
+        figsize (tuple, optional): size of the figure. Defaults to p.FIG_SIZE.
+        color (str, optional): color of the line. Defaults to p.COLORS[0].
+
+    Returns:
+        fig, ax: figure and axis objects
+    """
     if date_col not in data.columns:
         raise ValueError("date_col must exist within the data columns.")
     if value_col not in data.columns:
@@ -87,6 +126,20 @@ def plot_time_series(data, date_col, value_col, mean_freq=None, figsize=p.FIG_SI
     
 
 def plt_acf_pcf(data, date_col, value_col, lags=None, color='mediumblue', figsize=p.FIG_SIZE, **kwargs):
+    """
+    Plot the autocorrelation and partial autocorrelation of the values in the value_col of the data.
+
+    Args:
+        data (pd.DataFrame): data to plot
+        date_col (str): column name of the dates
+        value_col (str): column name of the values to plot
+        lags (int, optional): number of lags to plot. Defaults to None.
+        color (str, optional): color of the lines. Defaults to 'mediumblue'.
+        figsize (tuple, optional): size of the figure. Defaults to p.FIG_SIZE.
+    
+    Returns:
+        fig, ax: figure and axis objects
+    """
     if value_col not in data.columns:
         raise ValueError("value_col must exist within the data columns.")
     
@@ -103,6 +156,20 @@ def plt_acf_pcf(data, date_col, value_col, lags=None, color='mediumblue', figsiz
     plt.tight_layout()
 
 def plot_lag_cols(data, date_col, value_col, lag_col_root, num_lags=None, figsize=p.FIG_SIZE):
+    """
+    Plot the values in the value_col of the data and the lag columns.
+
+    Args:
+        data (pd.DataFrame): data to plot
+        date_col (str): column name of the dates
+        value_col (str): column name of the values to plot
+        lag_col_root (str): root of the lag column names
+        num_lags (int, optional): number of lags to plot. Defaults to None.
+        figsize (tuple, optional): size of the figure. Defaults to p.FIG_SIZE.
+
+    Returns:
+        fig, ax: figure and axis objects
+    """
     
     all_lag_cols = [col for col in data.columns if lag_col_root in col]
     if not num_lags:
@@ -115,11 +182,24 @@ def plot_lag_cols(data, date_col, value_col, lag_col_root, num_lags=None, figsiz
         ax.plot(data[date_col], data[lag_col], label=lag_col)
     
     plt.legend()
+    return fig, ax
 
 def visualize_train_test(train, test, date_col, value_col, figsize=p.FIG_SIZE):
-    fig, ax = plt.subplots(figsize=(6, 3)) 
+    """
+    Plot the train and test data.
 
-    full_data = pd.concat((train, test))
+    Args:
+        train (pd.DataFrame): train data
+        test (pd.DataFrame): test data
+        date_col (str): column name of the dates
+        value_col (str): column name of the values to plot
+        figsize (tuple, optional): size of the figure. Defaults to p.FIG_SIZE.
+    
+    Returns:
+        fig, ax: figure and axis objects
+    """
+    fig, ax = plt.subplots(figsize=(6, 3)) 
     sns.lineplot(x=train[date_col], y=train[value_col], ax=ax, label='train')
     sns.lineplot(x=test[date_col], y=test[value_col], ax=ax, label='test')
     sns.despine()
+    return fig, ax

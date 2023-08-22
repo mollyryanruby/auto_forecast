@@ -10,7 +10,7 @@ import numpy as np
 # intra-package code
 import parameters as p
 
-def plot_periodic_values_hist(data, value_col, figsize=p.FIG_SIZE, color=p.PLOT_COLOR_1):
+def plot_periodic_values_hist(data, value_col, figsize=p.FIG_SIZE, color=p.COLORS[0]):
     if value_col not in data.columns:
         raise ValueError("value_col must exist within the data columns.")
 
@@ -25,7 +25,7 @@ def plot_periodic_values_hist(data, value_col, figsize=p.FIG_SIZE, color=p.PLOT_
     return fig, ax
     
 
-def plot_values_per_group(data, value_col, group_cols, figsize=p.FIG_SIZE, fill_color=p.PLOT_COLOR_1):
+def plot_values_per_group(data, value_col, group_cols, figsize=p.FIG_SIZE, fill_color=p.COLORS[0]):
     if value_col not in data.columns:
         raise ValueError("value_col must exist within the data columns.")
     if not isinstance(group_cols, str) and not isinstance(group_cols, list):
@@ -50,7 +50,7 @@ def plot_values_per_group(data, value_col, group_cols, figsize=p.FIG_SIZE, fill_
     sns.despine()
     return fig, ax
 
-def plot_time_series(data, date_col, value_col, mean_freq=None, figsize=p.FIG_SIZE, color=p.PLOT_COLOR_1):
+def plot_time_series(data, date_col, value_col, mean_freq=None, figsize=p.FIG_SIZE, color=p.COLORS[0]):
     if date_col not in data.columns:
         raise ValueError("date_col must exist within the data columns.")
     if value_col not in data.columns:
@@ -58,6 +58,7 @@ def plot_time_series(data, date_col, value_col, mean_freq=None, figsize=p.FIG_SI
 
     data[date_col] = pd.to_datetime(data[date_col])
     fig, ax = plt.subplots(figsize=figsize)
+    
     sns.lineplot(
         x=data[date_col], 
         y=data[value_col], 
@@ -121,24 +122,4 @@ def visualize_train_test(train, test, date_col, value_col, figsize=p.FIG_SIZE):
     full_data = pd.concat((train, test))
     sns.lineplot(x=train[date_col], y=train[value_col], ax=ax, label='train')
     sns.lineplot(x=test[date_col], y=test[value_col], ax=ax, label='test')
-    sns.despine()
-
-def plot_results(results, original_df, model_name, figsize=p.FIG_SIZE, color1=p.PLOT_COLOR_1, color2=p.PLOT_COLOR_2):
-    """Plots predictions over original data to visualize results. Saves each
-    plot as a png.
-
-    Keyword arguments:
-    -- results: a dataframe with unscaled predictions
-    -- original_df: the original monthly sales dataframe
-    -- model_name: the name that will be used in the plot title
-    """
-    fig, ax = plt.subplots(figsize=figsize)
-    sns.lineplot(original_df.date, original_df.sales, data=original_df, ax=ax,
-                 label='Original', color=color1)
-    sns.lineplot(results.date, results.pred_value, data=results, ax=ax,
-                 label='Predicted', color=color2)
-    ax.set(xlabel="Date",
-           ylabel="Sales",
-           title=f"{model_name} Sales Forecasting Prediction")
-    ax.legend()
     sns.despine()

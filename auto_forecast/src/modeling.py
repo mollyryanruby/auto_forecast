@@ -16,6 +16,10 @@ from keras.models import Sequential
 
 from pmdarima.arima import auto_arima
 
+import parameters as p
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 def isvalid_value(value, values_list):
     if value not in values_list:
         raise ValueError(f"{value} not in the list of available options: {values_list}")
@@ -122,13 +126,26 @@ class SalesForecasting:
                 unscale_values = np.concatenate((x_values.values, predictions.reshape(-1,1)), axis=1)
                 predictions = [row[-1] for row in self.__undo_scaling(unscale_values, scaler)]
 
-            self.stored_models[model_name]['predictions'] = predictions
+                # unscale the training set as well for reference
+                training_set = pd.concat((self.X_train, self.y_train), axis=1).values
+                unscaled_train = self.__undo_scaling(training_set, scaler)
+                unscaled_y_train = [row[-1] for row in unscaled_train]
+                unscaled_x_train = [row[:-1] for row in unscaled_train]
+                self.unscaled_y_train = unscaled_y_train
+                self.unscaled_x_train = unscaled_x_train
+
+                if y_values is not None: 
+                    unscale_values_true = np.concatenate((x_values.values, y_values), axis=1)
+                    y_values_unscaled = [row[-1] for row in self.__undo_scaling(unscale_values_true, scaler)]
+                    self.y_values_unscaled = y_values_unscaled
+                    self.stored_models[model_name]['true_values'] = y_values_unscaled
+                    _, _, _ = self.get_scores(predictions, y_values_unscaled, model_name, print_scores)
             
-            if y_values is not None: 
-                unscale_values_true = np.concatenate((x_values.values, y_values), axis=1)
-                y_values_unscaled = [row[-1] for row in self.__undo_scaling(unscale_values_true, scaler)]
-                self.stored_models[model_name]['true_values'] = y_values_unscaled
-                _, _, _ = self.get_scores(predictions, y_values_unscaled, model_name, print_scores)
+            elif y_values is not None: 
+                self.stored_models[model_name]['true_values'] = y_values.iloc[:, 0].to_list()
+
+            self.stored_models[model_name]['predictions'] = predictions                    
+
         
         return self
     
@@ -167,36 +184,61 @@ class SalesForecasting:
 
         return rmse, mae, r2
     
-    def plot_results(self, model_list=None, xlabel="Date", ylabel="Sales", title="Sales Forecasting Predictions"):
-        import parameters as p
-        import seaborn as sns
+    def plot_results(self, model_list=None, figsize=p.FIG_SIZE, xlabel="Date", ylabel="Sales", title="Sales Forecasting Predictions"):
 
         # concatenate train and test to get all y values
-        y_values = self.y_train
-        test_index = self.test_index
-        train_index = self.train_index
+        test_index = list(self.test_index)
+        train_index = list(self.train_index)
         y_val_values = self.y_validation_values
         stored_models = self.stored_models
-
-        if y_val_values is not None: 
-            y_values += y_val_values
+        y_values = self.y_train
+        if (y_val_values is not None) & (self.scaler is not None): 
+            y_values = np.concatenate((self.unscaled_y_train, self.y_values_unscaled))
+        elif (y_val_values is not None):
+            y_values = np.concatenate((y_values, y_val_values))
+        elif (self.scaler is not None):
+            y_values = self.unscaled_y_train
 
         total_index = train_index + test_index
 
-        if model_list == None:
-            model_list == list(stored_models.keys())
+        if model_list is None:
+            model_list = list(stored_models.keys())
 
-        fig, ax = plt.subplots(figsize=p.FIG_SIZE)
-        sns.lineplot(total_index, y_values, ax=ax, label='Actual', color='blue')
+        fig, ax = plt.subplots(figsize=figsize)
+        sns.lineplot(x=total_index, y=y_values, ax=ax, label='Actual', color=p.COLORS[0])
         
-        for mod in model_list:
-            sns.lineplot(test_index, stored_models[mod]['predictions'], ax=ax, label=f'{mod}_Predictions')
+        # need to use total index to plot on same visual
+        # to do so, must have y be teh same length for both actuals and predictions
+        # so we fill y in predictions train period with null
+        filler_y_values = [np.nan] * len(train_index)
+        for i, mod in enumerate(model_list):
+            color = p.COLORS[i+1]
+            sns.lineplot(
+                x=total_index, 
+                y=filler_y_values + stored_models[mod]['predictions'], 
+                ax=ax, 
+                label=f'{mod}_Predictions',
+                color=color
+                )
 
-        ax.set(xlabel="Date",
-                ylabel="Sales",
+        ax.set(xlabel=xlabel,
+                ylabel=ylabel,
                 title=title)
         ax.legend()
         sns.despine()
+        return fig
+    
+    def plot_errs(self, figsize=(13,3)):
+        output_df = pd.DataFrame(self.stored_models).T
+        errs = ['rmse', 'mae', 'r2']
+        
+        fig, ax = plt.subplots(1, 3, figsize=figsize)
+        for i, err in enumerate(errs):
+            err_plot = sns.barplot(y=output_df[err], x=output_df.index, color=p.COLORS[i], ax=ax[i])
+            err_plot.tick_params(labelrotation=45)
+            err_plot.set_title(err)
+            err_plot.set_ylabel('') 
+
         return fig
 
         

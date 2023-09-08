@@ -1,5 +1,7 @@
 # auto_forecast
-Package for automated sales forecasting
+Package for automated sales forecasting.
+For conceptual understanding, read the paper here. 
+https://medium.com/towards-data-science/5-machine-learning-techniques-for-sales-forecasting-598e4984b109
 
 This package is a refactored version of original code found here: https://github.com/mollyryanruby/sales_forecasting
 To see the original code, click through the link above. 
